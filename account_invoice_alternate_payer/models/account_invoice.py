@@ -3,7 +3,7 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import RedirectWarning
-
+from odoo.exceptions import ValidationError
 
 class AccountInvoice(models.Model):
 
@@ -64,3 +64,22 @@ class AccountInvoice(models.Model):
             self.account_id = account_id
             self.payment_term_id = payment_term_id
         return res
+
+    @api.constrains('partner_id', 'partner_bank_id')
+    def validate_partner_bank_id(self):
+        for record in self:
+            if record.partner_bank_id:
+                partner = record.alternate_payer_id or record.partner_id
+                bank_partner = record.partner_bank_id.partner_id
+                if record.type in (
+                    'in_invoice', 'out_refund'
+                ) and bank_partner != partner.commercial_partner_id:
+                    raise ValidationError(_(
+                        "Commercial partner and vendor account owners must "
+                        "be identical."))
+                elif record.type in (
+                    'out_invoice', 'in_refund'
+                ) and record.company_id not in bank_partner.ref_company_ids:
+                    raise ValidationError(_(
+                        "The account selected for payment does not belong to "
+                        "the same company as this invoice."))
