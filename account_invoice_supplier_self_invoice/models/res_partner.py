@@ -30,7 +30,7 @@ class ResPartner(models.Model):
                 continue
             if record.self_invoice:
                 record.self_invoice_sequence_id = \
-                    self.env['ir.sequence'].create({
+                    self.env['ir.sequence'].sudo().create({
                         'name': record.name + ' Self invoice sequence',
                         'implementation': 'no_gap',
                         'number_increment': 1,
